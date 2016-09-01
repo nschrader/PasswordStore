@@ -170,7 +170,7 @@ int main() {
 				state = STATE_RELEASE_KEY; // release next
 				break;
 			case STATE_RELEASE_KEY:
-				buildReport(NULL);
+				buildReport(0);
 				state = STATE_WAIT; // go back to waiting
 				break;
 			default:
