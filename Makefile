@@ -5,7 +5,7 @@ DUDE = avrdude
 
 # If you are not using ATtiny85 and the USBtiny programmer, 
 # update the lines below to match your configuration
-CFLAGS = -Wall -Os -Iusbdrv -mmcu=attiny2313 -DF_CPU=20000000
+CFLAGS = -Wall -Os -Iusbdrv -mmcu=attiny2313 -DF_CPU=12000000
 OBJFLAGS = -j .text -j .data -O ihex
 DUDEFLAGS = -p attiny2313 -c usbasp -v
 
