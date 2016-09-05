@@ -8,10 +8,24 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
-#include <avr/eeprom.h>
 #include <util/delay.h>
 
 #include "usbdrv.h"
+
+// *********************************
+// *** BASIC PROGRAM DEFINITIONS ***
+// *********************************
+
+#define PASS_LENGTH 10 // password length for generated password
+#define SEND_ENTER 0 // define to 1 if you want to send ENTER after password
+
+PROGMEM const uchar measuring_message[] = "Starting generation...";
+PROGMEM const uchar finish_message[] = " New password saved.";
+
+// The buffer needs to accommodate the messages above and the password
+#define MSG_BUFFER_SIZE 32 
+
+
 
 // ************************
 // *** USB HID ROUTINES ***
@@ -19,7 +33,7 @@
 
 // From Frank Zhao's USB Business Card project
 // http://www.frank-zhao.com/cache/usbbusinesscard_details.php
-PROGMEM char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] = {
+PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] = {
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
     0x09, 0x06,                    // USAGE (Keyboard)
     0xa1, 0x01,                    // COLLECTION (Application)
@@ -64,6 +78,40 @@ static keyboard_report_t keyboard_report; // sent to PC
 volatile static uchar LED_state = 0xff; // received from PC
 static uchar idleRate; // repeat rate for keyboards
 
+#define STATE_SEND 1
+#define STATE_DONE 0
+
+static uchar messageState = STATE_DONE;
+static uchar messageBuffer[MSG_BUFFER_SIZE] = "";
+static uchar messagePtr = 0;
+static uchar messageCharNext = 1;
+
+#define MOD_SHIFT_LEFT (1<<1)
+
+uchar buildReport() {
+    uchar ch;
+
+    if(messageCharNext) { // send a keypress
+        ch = messageBuffer[messagePtr++];
+        
+        // convert character to modifier + keycode
+        keyboard_report.modifier = (LED_state & 2) ? MOD_SHIFT_LEFT : 0;
+        keyboard_report.keycode[0] = 4+(ch-'a');
+    } else { // key release before the next keypress!
+        keyboard_report.modifier = 0;
+        keyboard_report.keycode[0] = 0;
+    }
+    
+    messageCharNext = !messageCharNext; // invert
+    
+    return STATE_SEND;
+}
+
+// The buildReport is called by main loop and it starts transmitting
+// characters when messageState == STATE_SEND. The message is stored
+// in messageBuffer and messagePtr tells the next character to send.
+// Remember to reset messagePtr to 0 after populating the buffer!
+
 usbMsgLen_t usbFunctionSetup(uchar data[8]) {
     usbRequest_t *rq = (void *)data;
 
@@ -89,44 +137,41 @@ usbMsgLen_t usbFunctionSetup(uchar data[8]) {
     return 0; // by default don't return any data
 }
 
-#define NUM_LOCK 1
-#define CAPS_LOCK 2
-#define SCROLL_LOCK 4
+void caps_toggle(); // defined later in program logic
 
 usbMsgLen_t usbFunctionWrite(uint8_t * data, uchar len) {
 	if (data[0] == LED_state)
         return 1;
     else
         LED_state = data[0];
-	
-    // LED state changed
-	if(LED_state & CAPS_LOCK)
-		PORTB |= 1 << PB0; // LED on
-	else
-		PORTB &= ~(1 << PB0); // LED off
+    
+    caps_toggle();
 	
 	return 1; // Data read, not expecting more
 }
 
-// Now only supports letters 'a' to 'z' and 0 (NULL) to clear buttons
-void buildReport(uchar send_key) {
-	keyboard_report.modifier = 0;
-	
-	if(send_key >= 'a' && send_key <= 'z')
-		keyboard_report.keycode[0] = 4+(send_key-'a');
-	else
-		keyboard_report.keycode[0] = 0;
+#define CAPS_COUNTING 0
+#define CAPS_MEASURING 1
+
+static uchar capsCount = 0;
+static uchar capsState = CAPS_COUNTING;
+
+// This routine is called by usbFunctionWrite every time the keyboard LEDs
+// toggle - basically we count 4 toggles and then start regenerating
+void caps_toggle() {
+
+        // Type a message to the PC that we're regenerating the password
+        memcpy_P(messageBuffer, measuring_message, sizeof(measuring_message));
+        messagePtr = 0;
+        messageState = STATE_SEND;
+
 }
 
-#define STATE_WAIT 0
-#define STATE_SEND_KEY 1
-#define STATE_RELEASE_KEY 2
-
 int main() {
-	uchar i, button_release_counter = 0, state = STATE_WAIT;
+	uchar i;
 
-	DDRB = 1 << PB0; // PB0 as output
-	PORTB = 1 << PB1; // PB1 is input with internal pullup resistor activated
+    messagePtr = 0;
+    messageState = STATE_SEND;
 	
     for(i=0; i<sizeof(keyboard_report); i++) // clear report initially
         ((uchar *)&keyboard_report)[i] = 0;
@@ -150,34 +195,10 @@ int main() {
         wdt_reset(); // keep the watchdog happy
         usbPoll();
         
-		if(!(PINB & (1<<PB1))) { // button pressed (PB1 at ground voltage)
-			// also check if some time has elapsed since last button press
-			if(state == STATE_WAIT && button_release_counter == 255)
-				state = STATE_SEND_KEY;
-				
-			button_release_counter = 0; // now button needs to be released a while until retrigger
-		}
-		
-		if(button_release_counter < 255) 
-			button_release_counter++; // increase release counter
-		
         // characters are sent when messageState == STATE_SEND and after receiving
         // the initial LED state from PC (good way to wait until device is recognized)
-        if(usbInterruptIsReady() && state != STATE_WAIT && LED_state != 0xff){
-			switch(state) {
-			case STATE_SEND_KEY:
-				buildReport('x');
-				state = STATE_RELEASE_KEY; // release next
-				break;
-			case STATE_RELEASE_KEY:
-				buildReport(0);
-				state = STATE_WAIT; // go back to waiting
-				break;
-			default:
-				state = STATE_WAIT; // should not happen
-			}
-			
-			// start sending
+        if(usbInterruptIsReady() && messageState == STATE_SEND && LED_state != 0xff){
+			messageState = buildReport();
             usbSetInterrupt((void *)&keyboard_report, sizeof(keyboard_report));
         }
     }
