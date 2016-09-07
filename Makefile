@@ -1,47 +1,64 @@
-# WinAVR cross-compiler toolchain is used here
-CC = avr-gcc
-OBJCOPY = avr-objcopy
+# AVR cross-compiler toolchain is used here
+HOST_CC = gcc
+HOST_CFLAGS = -std=c99
+CROSS_CC = avr-gcc
+CROSS_CFLAGS = -Wall -Os -Iusbdrv -mmcu=$(PARTNO) -DF_CPU=$(CRYSTAL) -std=c99
+CROSS_OBJCOPY = avr-objcopy
+CROSS_OBJFLAGS = -j .text -j .data -O ihex
 DUDE = avrdude
+DUDEFLAGS = -p $(PARTNO) -c usbasp -v
 
-# If you are not using ATtiny85 and the USBtiny programmer, 
-# update the lines below to match your configuration
-CFLAGS = -Wall -Os -Iusbdrv -mmcu=attiny2313 -DF_CPU=12000000 -std=c99
-OBJFLAGS = -j .text -j .data -O ihex
-DUDEFLAGS = -p attiny2313 -c usbasp -v
+# AVR microcontroller
+PARTNO = attiny2313
+CRYSTAL = 12000000
 
 # Object files for the firmware (usbdrv/oddebug.o not strictly needed I think)
-OBJECTS = usbdrv/usbdrv.o usbdrv/oddebug.o usbdrv/usbdrvasm.o main.o
+CROSS_OBJECTS = usbdrv/usbdrv.o usbdrv/oddebug.o usbdrv/usbdrvasm.o main.o
+
+# Source files for host utils
+HOST_OBJECTS = util/passwordSeed.o
 
 # By default, build the firmware and command-line client, but do not flash
-all: main.hex
+all: main.hex eeprom.bin
 
 # With this, you can flash the firmware by just typing "make flash" on command-line
-flash: main.hex
+flash:	main.hex
 	$(DUDE) $(DUDEFLAGS) -U flash:w:$<
 
-eeprom: main.eep
+eeprom:	eeprom.bin
 	$(DUDE) $(DUDEFLAGS) -U eeprom:w:$<
 
 # Housekeeping if you want it
 clean:
-	$(RM) *.o *.hex *.elf usbdrv/*.o
+	$(RM) *.o *.hex *.bin *.elf usbdrv/*.o util/*.o
 
 # From .elf file to .hex
 %.hex: %.elf
-	$(OBJCOPY) $(OBJFLAGS) $< $@
+	$(CROSS_OBJCOPY) $(CROSS_OBJFLAGS) $< $@
 
 # Main.elf requires additional objects to the firmware, not just main.o
-main.elf: $(OBJECTS)
-	$(CC) $(CFLAGS) $(OBJECTS) -o $@
+main.elf: $(CROSS_OBJECTS)
+	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_OBJECTS) -o $@
+	
+passwordSeed.elf: $(HOST_OBJECTS)
+	$(HOST_CC) $(HOST_CFLAGS) $(HOST_OBJECTS) -o $@
 
 # Without this dependance, .o files will not be recompiled if you change 
 # the config! I spent a few hours debugging because of this...
-$(OBJECTS): usbdrv/usbconfig.h
+$(CROSS_OBJECTS): usbdrv/usbconfig.h
 
-# From C source to .o object file
-%.o: %.c	
-	$(CC) $(CFLAGS) -c $< -o $@
+# From C source to .o object file with cross toolchain
+%.o:	%.c
+	$(CROSS_CC) $(CROSS_CFLAGS) -c $< -o $@
+	
+# From C source to .o object file with host toolchain
+util/%.o: util/%.c
+	$(HOST_CC) $(HOST_CFLAGS) -c $< -o $@
 
-# From assembler source to .o object file
-%.o: %.S
-	$(CC) $(CFLAGS) -x assembler-with-cpp -c $< -o $@
+# From assembler source to .o object file with cross toolchain
+%.o:	%.S
+	$(CROSS_CC) $(CROSS_CFLAGS) -c $< -o $@
+
+# Generate password seed
+eeprom.bin: passwordSeed.elf
+	./$< < /dev/random
