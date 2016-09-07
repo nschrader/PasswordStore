@@ -2,14 +2,14 @@
 HOST_CC = gcc
 HOST_CFLAGS = -std=c99
 CROSS_CC = avr-gcc
-CROSS_CFLAGS = -Wall -Os -Iusbdrv -mmcu=$(PARTNO) -DF_CPU=$(CRYSTAL) -std=c99
+CROSS_CFLAGS = -Wall -Os -Iusbdrv -Iutil -mmcu=$(PARTNO) -DF_CPU=$(CRYSTAL) -std=c99
 CROSS_OBJCOPY = avr-objcopy
 CROSS_OBJFLAGS = -j .text -j .data -O ihex
 DUDE = avrdude
 DUDEFLAGS = -p $(PARTNO) -c usbasp -v
 
 # AVR microcontroller
-PARTNO = attiny2313
+PARTNO = attiny4313
 CRYSTAL = 12000000
 
 # Object files for the firmware (usbdrv/oddebug.o not strictly needed I think)
