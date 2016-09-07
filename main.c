@@ -1,18 +1,25 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
+#include <avr/eeprom.h>
+
 #include <util/delay.h>
 #include <string.h>
 
 #include "usbdrv.h"
+#include "passwordSeed.h"
+
+#define TRUE 1
+#define FALSE 0
 
 #define STATE_SEND 1
 #define STATE_DONE 0
 
-#define CAPS 2
-#define SMALL 0
+#define CAPS_LOCK_LED 0x02
+#define CAPS_LOCK_KEY 0x39
 
-#define MSG_BUFFER_SIZE 5
+#define SHIFT_MODIFIER 0x20
+#define NO_MODIFIER 0x00
 
 PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] = {
 	0x05, 0x01, // USAGE_PAGE (Generic Desktop)
@@ -49,8 +56,6 @@ PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] 
 	0xc0 // END_COLLECTION
 };
 
-PROGMEM const uchar message[] = "Blah";
-
 typedef struct {
 	uint8_t modifier;
 	uint8_t reserved;
@@ -62,59 +67,43 @@ volatile static uchar LED_state = 0xff; // received from host
 static uchar idleRate; // repeat rate for keyboards
 
 static uchar messageState = STATE_DONE;
-static uchar messageBuffer[MSG_BUFFER_SIZE] = "";
-static uchar messagePtr = 0;
-static uchar messageCharNext = 1;
+static void *messagePtr = NULL;
+static uchar messageCharNext = TRUE;
+static uchar messageRestoreCapsLock = FALSE;
 
 uchar buildReport() {
-	if (messageState == STATE_DONE || messagePtr >= sizeof (messageBuffer) || messageBuffer[messagePtr] == 0){
-		keyboard_report.modifier = 0;
-		keyboard_report.keycode[0] = 0;
+	if (messageState == STATE_DONE || messagePtr >= NULL + PASSWORD_LENGTH) { // End of transmission
+		if (messageRestoreCapsLock) {
+			keyboard_report.modifier = NO_MODIFIER;
+			keyboard_report.keycode[0] = CAPS_LOCK_KEY;
+		} else
+			memset(&keyboard_report, 0, sizeof (keyboard_report));
 		return STATE_DONE;
 	}
-	if (messageCharNext){ // send a keypress
-		uchar ch = messageBuffer[messagePtr++];
-		/*if (ch >= '0' && ch <= '9'){
-			keyboard_report.modifier = 0;
-			keyboard_report.keycode[0] = (ch == '0') ? 39 : 30 + (ch - '1');
-		} else*/
-		if (ch >= 'a' && ch <= 'z'){
-			keyboard_report.modifier = (LED_state & CAPS) ? CAPS : SMALL;
-			keyboard_report.keycode[0] = 4 + (ch - 'a');
-		} else if (ch >= 'A' && ch <= 'Z'){
-			keyboard_report.modifier = (LED_state & CAPS) ? SMALL : CAPS;
-			keyboard_report.keycode[0] = 4 + (ch - 'A');
-		} /*else {
-			keyboard_report.modifier = 0;
-			keyboard_report.keycode[0] = 0;
-			switch (ch){
-			case '.':
-				keyboard_report.keycode[0] = 0x37;
-				break;
-			case '_':
-				keyboard_report.modifier = MOD_SHIFT_LEFT;
-			case '-':
-				keyboard_report.keycode[0] = 0x2D;
-				break;
-			}
-		}*/
-	} else { // send a keyrelease
-		keyboard_report.modifier = 0;
-		keyboard_report.keycode[0] = 0;
+	if (LED_state & CAPS_LOCK_LED) { // unlocks kaps
+		messageRestoreCapsLock = TRUE;
+		keyboard_report.modifier = NO_MODIFIER;
+		keyboard_report.keycode[0] = CAPS_LOCK_KEY;
+		return STATE_SEND;
 	}
+	if (messageCharNext){ // send a keypress
+		passwordSeed s;
+		eeprom_read_block(&s, messagePtr++, sizeof(passwordSeed));
+		keyboard_report.modifier = (s.modifier) ? SHIFT_MODIFIER : NO_MODIFIER;
+		keyboard_report.keycode[0] = s.keycode;
+	} else // send a keyrelease
+		memset(&keyboard_report, 0, sizeof (keyboard_report));
 	messageCharNext = !messageCharNext; // invert
 	return STATE_SEND;
 }
 
 usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 	usbRequest_t * rq = (void *) data;
-
 	if ((rq->bmRequestType & USBRQ_TYPE_MASK) == USBRQ_TYPE_CLASS){
 		switch (rq->bRequest){
 		case USBRQ_HID_GET_REPORT: // send "no keys pressed" if asked here
 			usbMsgPtr = (void *) &keyboard_report; // we only have this one
-			keyboard_report.modifier = 0;
-			keyboard_report.keycode[0] = 0;
+			memset(&keyboard_report, 0, sizeof (keyboard_report));
 			return sizeof (keyboard_report);
 		case USBRQ_HID_SET_REPORT: // if wLength == 1, should be LED state
 			return (rq->wLength.word == 1) ? USB_NO_MSG : 0;
@@ -130,7 +119,6 @@ usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 }
 
 void caps_toggle() {
-	memcpy_P(messageBuffer, message, sizeof (message));
 	messagePtr = 0;
 	messageState = STATE_SEND;
 }
@@ -144,7 +132,7 @@ usbMsgLen_t usbFunctionWrite(uint8_t * data, uchar len) {
 	return 1; // Data read, not expecting more
 }
 
-int main() {	
+int main() {
 	memset(&keyboard_report, 0, sizeof (keyboard_report));
 	wdt_enable(WDTO_1S); // enable 1s watchdog timer
 	usbInit();

@@ -2,8 +2,8 @@
  * passwordSeed.c
  * 
  * This program generates a password seed to be flashed into an EEPROM
- * with SIZE bytes. Each seedbyte is generated in the form:
- * {USB-HID-Keycode} {0/1 (SMALL/CAPS)} {0}, i.e. 01100110
+ * with PASSWORD_POOL bytes. Each seedbyte is generated in the form:
+ * {USB-HID-Keycode} {0/1 (SMALL/CAPITAL)} {0}, i.e. 01100110
  * 
  */
 
@@ -12,20 +12,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#define SIZE 256
-#define validKeycode(x) ((x >= 0x04 && x <= 0x27) || (x >= 0x2d && x <= 0x31) || (x >= 0x33 && x <= 0x38))
+#include "passwordSeed.h"
 
-typedef unsigned char uchar;
-
-#pragma pack(1)
-typedef struct {
-  uchar :1;
-  uchar modifier:1;
-  uchar keycode:6;
-} passwordSeed;
+#define validKeycode(x) ((x >= 0x04 && x <= 0x27) || (x >= 0x2d && x <= 0x31) || (x >= 0x33 && x <= 0x37))
 
 int main(int argc, char *argv[]) {
-  passwordSeed s[SIZE];
+  passwordSeed s[PASSWORD_POOL];
   FILE *out;
   
   if (argc > 1)
@@ -36,16 +28,16 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   
   memset(s, 0, sizeof(s));
-  for (int c_modifier = 0, c_keycode = 0; c_modifier < SIZE || c_keycode < SIZE;) {
+  for (int c_modifier = 0, c_keycode = 0; c_modifier < PASSWORD_POOL || c_keycode < PASSWORD_POOL;) {
     uchar ch = getchar();
-    if (validKeycode(ch) && c_keycode < SIZE)
+    if (validKeycode(ch) && c_keycode < PASSWORD_POOL)
       s[c_keycode++].keycode = ch;
-    else if (c_modifier < SIZE)
+    else if (c_modifier < PASSWORD_POOL)
       s[c_modifier++].modifier = (ch % 2);
      c_modifier++; 
   }
   
-  fwrite(s, sizeof(passwordSeed), SIZE, out);
+  fwrite(s, sizeof(passwordSeed), PASSWORD_POOL, out);
   
   return EXIT_SUCCESS;
 }
