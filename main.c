@@ -21,6 +21,9 @@
 #define SHIFT_MODIFIER 0x20
 #define NO_MODIFIER 0x00
 
+#define digitalInput(x, y) {DDRD &= ~(1 << P##x##y); PORTD |= (1 << P##x##y);}
+#define digitalRead(x, y) !(PIND & (1 << P##x##y))
+
 PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] = {
 	0x05, 0x01, // USAGE_PAGE (Generic Desktop)
 	0x09, 0x06, // USAGE (Keyboard)
@@ -146,14 +149,20 @@ int main() {
 	usbDeviceConnect();
 
 	sei(); // Enable interrupts after re-enumeration
+	
+	digitalInput(D, 5);
 
 	while (1){
 		// keep the watchdog happy
 		wdt_reset();
 		usbPoll();
+		
+		if (digitalRead(D, 5) && messageState != STATE_SEND) {
+			caps_toggle();
+		}
 
 		// characters are sent after the initial LED state from host to wait until device is recognized
-		if (usbInterruptIsReady() && messageState == STATE_SEND && LED_state != 0xff){
+		if (usbInterruptIsReady() && messageState == STATE_SEND){
 			messageState = buildReport();
 			usbSetInterrupt((void *) &keyboard_report, sizeof (keyboard_report));
 		}
