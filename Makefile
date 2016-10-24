@@ -13,7 +13,7 @@ PARTNO = attiny4313
 CRYSTAL = 12000000
 
 # Object files for the firmware (usbdrv/oddebug.o not strictly needed I think)
-CROSS_OBJECTS = usbdrv/usbdrv.o usbdrv/oddebug.o usbdrv/usbdrvasm.o main.o
+CROSS_OBJECTS = usbdrv/usbdrv.o usbdrv/oddebug.o usbdrv/usbdrvasm.o usb.o main.o
 
 # Source files for host utils
 HOST_OBJECTS = util/passwordSeed.o
