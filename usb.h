@@ -1,3 +1,6 @@
+#ifndef _USB_H
+#define _USB_H
+
 #include "usbdrv.h"
 
 typedef struct {
@@ -8,3 +11,5 @@ typedef struct {
 
 extern keyboard_report_t keyboardReport;
 extern volatile uchar LedState;
+
+#endif

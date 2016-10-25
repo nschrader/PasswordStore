@@ -1,4 +1,3 @@
-#include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
 #include <avr/eeprom.h>
@@ -6,8 +5,10 @@
 #include <util/delay.h>
 #include <string.h>
 
+#include "main.h"
 #include "usbdrv.h"
 #include "usb.h"
+#include "button.h"
 #include "passwordSeed.h"
 
 #define CAPS_LOCK_LED 0x02
@@ -15,14 +16,6 @@
 
 #define SHIFT_MODIFIER 0x20
 #define NO_MODIFIER 0x00
-
-#define digitalInput(x, y) { DDRD &= ~(1 << P ## x ## y); PORTD |= (1 << P ## x ## y); }
-#define digitalRead(x, y) !(PIND & (1 << P ## x ## y))
-
-typedef enum {
-	FALSE,
-	TRUE
-} boolean_t;
 
 typedef enum {
 	STATE_DONE,
@@ -64,6 +57,8 @@ static uchar buildReport() {
 	return STATE_SEND;
 }
 
+volatile int32_t cycleCount = 0;
+
 int main() {
 	memset(&keyboardReport, 0, sizeof (keyboardReport));
 	wdt_enable(WDTO_1S); // enable 1s watchdog timer
@@ -81,13 +76,14 @@ int main() {
 	sei();
 
 	// Set-up GPIOs
-	digitalInput(D, 5);
+	digitalInputButton();
 
 	while (1){
 		// keep the watchdog happy
 		wdt_reset();
 		usbPoll();
-		if (digitalRead(D, 5) && messageState != STATE_SEND){
+		buttonPoll();
+		if (buttonState == LONG_PRESS && messageState != STATE_SEND){
 			messagePtr = NULL;
 			messageState = STATE_SEND;
 		}
@@ -96,6 +92,7 @@ int main() {
 			messageState = buildReport();
 			usbSetInterrupt((void *) &keyboardReport, sizeof (keyboardReport));
 		}
+		cycleCount++;
 	}
 	return 0;
 }
