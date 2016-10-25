@@ -27,12 +27,6 @@
 #include "main.h"
 #include "usbdrv.h"
 
-#define BUTTON_LONG_PRESS_THRESHOLD 50000
-#define BUTTON_DEBOUNCING_THRESHOLD 100
-
-#define digitalInputButton() digitalInput(D, 5)
-#define digitalReadButton() digitalRead(D, 5)
-
 typedef enum {
 	NO_PRESS,
 	SHORT_PRESS,

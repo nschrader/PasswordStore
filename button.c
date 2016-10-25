@@ -25,6 +25,12 @@
 #include "main.h"
 #include "usbdrv.h"
 
+#define BUTTON_LONG_PRESS_THRESHOLD 50000
+#define BUTTON_DEBOUNCING_THRESHOLD 100
+
+#define digitalInputButton() digitalInput(D, 5)
+#define digitalReadButton() digitalRead(D, 5)
+
 uchar buttonState = NO_PRESS;
 static uchar lastButtonState = NO_PRESS;
 static int32_t buttonPushCycleCount = 0;
