@@ -39,7 +39,7 @@ PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] 
 
 keyboard_report_t keyboardReport; // sent to host
 volatile uchar LedState = 0xff; // received from host
-uchar idleRate; // repeat rate for keyboards
+static uchar idleRate; // repeat rate for keyboards
 
 usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 	usbRequest_t * rq = (void *) data;

@@ -8,4 +8,3 @@ typedef struct {
 
 extern keyboard_report_t keyboardReport;
 extern volatile uchar LedState;
-extern uchar idleRate;

@@ -10,12 +10,6 @@
 #include "usb.h"
 #include "passwordSeed.h"
 
-#define TRUE 1
-#define FALSE 0
-
-#define STATE_SEND 1
-#define STATE_DONE 0
-
 #define CAPS_LOCK_LED 0x02
 #define CAPS_LOCK_KEY 0x39
 
@@ -24,6 +18,16 @@
 
 #define digitalInput(x, y) { DDRD &= ~(1 << P ## x ## y); PORTD |= (1 << P ## x ## y); }
 #define digitalRead(x, y) !(PIND & (1 << P ## x ## y))
+
+typedef enum {
+	FALSE,
+	TRUE
+} boolean_t;
+
+typedef enum {
+	STATE_DONE,
+	STATE_SEND
+} transmission_state_t;
 
 static uchar messageState = STATE_DONE;
 static void * messagePtr = NULL;
