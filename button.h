@@ -27,6 +27,9 @@
 #include "main.h"
 #include "usbdrv.h"
 
+#define digitalInputButton() { digitalInput(D, 5); digitalPullup(D, 5); }
+#define digitalReadButton() digitalRead(D, 5)
+
 typedef enum {
 	NO_PRESS,
 	SHORT_PRESS,
