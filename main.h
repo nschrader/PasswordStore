@@ -25,21 +25,20 @@
 #define _MAIN_H
 
 #include <avr/io.h>
+#include "usbdrv.h"
 
 #define digitalInput(x, y) DDR ## x &= ~(1 << P ## x ## y)
 #define digitalPullup(x, y) PORT ## x |= (1 << P ## x ## y)
 #define digitalOutput(x, y) DDR ## x |= (1 << P ## x ##y)
-#define digitalOutputRegister(x, y) DDR ## x = y
 #define digitalRead(x, y) !(PIN ## x & (1 << P ## x ## y))
 #define digitalWriteOn(x, y) PORT ## x |= (1 << P ## x ## y)
 #define digitalWriteOff(x, y) PORT ## x &= ~(1 << P ## x ## y)
-#define digitalWriteRegister(x, y) PORT ## x = y
 
 typedef enum {
 	FALSE,
 	TRUE
 } boolean_t;
 
-extern volatile int32_t cycleCount;
+extern volatile uchar cycleCount;
 
 #endif
