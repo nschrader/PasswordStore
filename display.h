@@ -39,12 +39,14 @@
 #define DIG_OFF() PORTD |= 0x53
 
 extern __flash const uint8_t displayRegister[];
-void writeDisplayRegister(uint8_t x);
 
 #define _D _0
 #define _S _5
 typedef enum {
 	_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _E, _F, _N, _R, _RP
 } display_character_t;
+
+void writeDisplayRegister(uint8_t x);
+void countDisplay();
 
 #endif

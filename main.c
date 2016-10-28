@@ -106,6 +106,8 @@ int main() {
 	// Set-up display
 	DIG_OUTPUT();
 	DIG_OFF();
+	
+	DIG1_ON();
 
 	while (1){
 		// keep the watchdog happy
@@ -121,15 +123,7 @@ int main() {
 			messageState = buildReport();
 			usbSetInterrupt((void *) &keyboardReport, sizeof (keyboardReport));
 		}
-		if (cycleCount % 2){
-			DIG3_OFF();
-			writeDisplayRegister(displayRegister[0]);
-			DIG1_ON();
-		} else {
-			DIG1_OFF();
-			writeDisplayRegister(displayRegister[5]);
-			DIG3_ON();
-		}
+		countDisplay();
 		// Hyper fast 256-devider
 		if (!innerCycleCount)
 			cycleCount++;
