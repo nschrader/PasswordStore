@@ -47,6 +47,7 @@ typedef enum {
 } display_character_t;
 
 void writeDisplayRegister(uint8_t x);
-void countDisplay();
+void multiplexDisplay();
+void countDisplay(uint8_t digit);
 
 #endif

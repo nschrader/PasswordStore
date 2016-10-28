@@ -39,15 +39,37 @@ void writeDisplayRegister(uint8_t x) {
 }
 
 static uint8_t countCycleCount = 0;
-static uint8_t displayRegisterIndex = _0;
-void countDisplay() {
+static uint8_t displayRegisterIndex[4] = {
+	_0, _0, _0, _0
+};
+
+void multiplexDisplay() {
+	if ((cycleCount & 0x03) == 0x00) {
+		DIG4_OFF();
+		writeDisplayRegister(displayRegister[displayRegisterIndex[0]]);
+		DIG1_ON();
+	} else if ((cycleCount & 0x03) == 0x01) {
+		DIG1_OFF();
+		writeDisplayRegister(displayRegister[displayRegisterIndex[1]]);
+		DIG2_ON();
+	} else if ((cycleCount & 0x03) == 0x02) {
+		DIG2_OFF();
+		writeDisplayRegister(displayRegister[displayRegisterIndex[2]]);
+		DIG3_ON();
+	} else {
+		DIG3_OFF();
+		writeDisplayRegister(displayRegister[displayRegisterIndex[3]]);
+		DIG4_ON();
+	}
+}
+
+void countDisplay(uint8_t digit) {
 	uint8_t diff = cycleCount - countCycleCount;
 	if (diff >> COUNT_1S_SHIFT) { // Hyper fast (diff > 128)
-		if (displayRegisterIndex == _9)
-			displayRegisterIndex = _0;
+		if (displayRegisterIndex[digit] == _9)
+			displayRegisterIndex[digit] = _0;
 		else
-			displayRegisterIndex++;
-		writeDisplayRegister(displayRegister[displayRegisterIndex]);
+			displayRegisterIndex[digit]++;
 		countCycleCount = cycleCount;
 	}
 }

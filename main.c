@@ -82,7 +82,8 @@ static uint8_t buildReport() {
 }
 
 volatile uint8_t cycleCount = 0;
-static uint8_t innerCycleCount = 0;
+static volatile uint8_t innerCycleCount = 0;
+static uint8_t displayDigitIndex = 0;
 
 int main() {
 	memset(&keyboardReport, 0, sizeof (keyboardReport));
@@ -106,24 +107,29 @@ int main() {
 	// Set-up display
 	DIG_OUTPUT();
 	DIG_OFF();
-	
-	DIG1_ON();
 
 	while (1){
 		// keep the watchdog happy
 		wdt_reset();
 		usbPoll();
 		buttonPoll();
+		
 		if (buttonState == LONG_PRESS && messageState != STATE_SEND){
 			messagePtr = NULL;
 			messageState = STATE_SEND;
 		}
+		if (buttonState == SHORT_PRESS)
+			displayDigitIndex++;
+		countDisplay(displayDigitIndex);
+			
 		// characters are sent after the initial LED state from host to wait until device is recognized
 		if (usbInterruptIsReady() && messageState == STATE_SEND && LedState != 0xff){
 			messageState = buildReport();
 			usbSetInterrupt((void *) &keyboardReport, sizeof (keyboardReport));
 		}
-		countDisplay();
+		
+		multiplexDisplay();
+		
 		// Hyper fast 256-devider
 		if (!innerCycleCount)
 			cycleCount++;
