@@ -46,12 +46,12 @@ typedef enum {
 	STATE_SEND
 } transmission_state_t;
 
-static uchar messageState = STATE_DONE;
+static uint8_t messageState = STATE_DONE;
 static void * messagePtr = NULL;
-static uchar messageCharNext = TRUE;
-static uchar messageRestoreCapsLock = FALSE;
+static uint8_t messageCharNext = TRUE;
+static uint8_t messageRestoreCapsLock = FALSE;
 
-static uchar buildReport() {
+static uint8_t buildReport() {
 	if (messageState == STATE_DONE || messagePtr >= NULL + PASSWORD_LENGTH){ // End of transmission
 		if (messageRestoreCapsLock){
 			keyboardReport.modifier = NO_MODIFIER;
@@ -81,8 +81,8 @@ static uchar buildReport() {
 	return STATE_SEND;
 }
 
-volatile uchar cycleCount = 0;
-static uchar innerCycleCount = 0;
+volatile uint8_t cycleCount = 0;
+static uint8_t innerCycleCount = 0;
 
 int main() {
 	memset(&keyboardReport, 0, sizeof (keyboardReport));
@@ -91,7 +91,7 @@ int main() {
 
 	// enforce re-enumeration after 500ms
 	usbDeviceDisconnect();
-	for (uchar i = 0; i < 250; i++){
+	for (uint8_t i = 0; i < 250; i++){
 		wdt_reset();
 		_delay_ms(2);
 	}

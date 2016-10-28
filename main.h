@@ -25,7 +25,7 @@
 #define _MAIN_H
 
 #include <avr/io.h>
-#include "usbdrv.h"
+#include <stdint.h>
 
 #define digitalInput(x, y) DDR ## x &= ~(1 << P ## x ## y)
 #define digitalPullup(x, y) PORT ## x |= (1 << P ## x ## y)
@@ -39,6 +39,6 @@ typedef enum {
 	TRUE
 } boolean_t;
 
-extern volatile uchar cycleCount;
+extern volatile uint8_t cycleCount;
 
 #endif

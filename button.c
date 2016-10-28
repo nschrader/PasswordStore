@@ -23,26 +23,25 @@
 
 #include "button.h"
 #include "main.h"
-#include "usbdrv.h"
 
-#define BUTTON_LONG_PRESS_THRESHOLD 50000
-#define BUTTON_DEBOUNCING_THRESHOLD 100
+#define BUTTON_LONG_PRESS_SHIFT 7
+#define BUTTON_DEBOUNCING_SHIFT 4
 
-uchar buttonState = NO_PRESS;
-static uchar lastButtonState = NO_PRESS;
-static int32_t buttonPushCycleCount = 0;
-static uchar lastButton = FALSE;
+uint8_t buttonState = NO_PRESS;
+static uint8_t lastButtonState = NO_PRESS;
+static uint8_t buttonPushCycleCount = 0;
+static uint8_t lastButton = FALSE;
 
 void buttonPoll() {
-	uchar sameButtonState = FALSE;
-	uchar button = digitalReadButton();
+	uint8_t sameButtonState = FALSE;
+	uint8_t button = digitalReadButton();
 	if (button){
 		if (!lastButton)
 			buttonPushCycleCount = cycleCount;
-		int32_t diff = cycleCount - buttonPushCycleCount;
-		if (diff > BUTTON_LONG_PRESS_THRESHOLD)
+		uint8_t diff = cycleCount - buttonPushCycleCount;
+		if (diff >> BUTTON_LONG_PRESS_SHIFT) //Hyper fast diff == 256
 			buttonState = LONG_PRESS;
-		else if (diff > BUTTON_DEBOUNCING_THRESHOLD)
+		else if (diff >> BUTTON_DEBOUNCING_SHIFT) // Hyper fast diff == 16
 			buttonState = SHORT_PRESS;
 		sameButtonState = (lastButtonState == buttonState);
 	}

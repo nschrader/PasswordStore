@@ -25,7 +25,7 @@
 #define _BUTTON_H
 
 #include "main.h"
-#include "usbdrv.h"
+#include <stdint.h>
 
 #define digitalInputButton() { digitalInput(D, 5); digitalPullup(D, 5); }
 #define digitalReadButton() digitalRead(D, 5)
@@ -36,7 +36,7 @@ typedef enum {
 	LONG_PRESS
 } button_state_t;
 
-extern uchar buttonState;
+extern uint8_t buttonState;
 
 void buttonPoll();
 
