@@ -29,7 +29,7 @@
 #define COUNT_1S_SHIFT 7
 
 const __flash uint8_t displayRegister[] = {
-	0x04, 0xfa, 0x12, 0xce, 0x9e, 0x36, 0xbc, 0xfc, 0x1a, 0xfe, 0xbe,
+	0x05, 0xfa, 0x12, 0xce, 0x9e, 0x36, 0xbc, 0xfc, 0x1a, 0xfe, 0xbe,
 	0xec, 0x6c, 0x7a, 0x7e, 0x7f
 };
 
@@ -42,11 +42,12 @@ void writeDisplayRegister(uint8_t x) {
 	PORTB = x;
 }
 
-static uint8_t countCycleCount = 0;
+uint8_t menuPage = 0;
 uint8_t displayRegisterIndex[] = {
 	_0, _0, _0, _0
 };
 
+static uint8_t countCycleCount = 0;
 void countDisplay(uint8_t digit) {
 	uint8_t diff = cycleCount - countCycleCount;
 	if (diff >> COUNT_1S_SHIFT) { // Hyper fast (diff > 128)
@@ -65,7 +66,6 @@ void displaySent() {
 	displayRegisterIndex[3] = _T;
 }
 
-static uint8_t menuPage = 0;
 void displayLanguage() {
 	uint8_t diff = cycleCount - countCycleCount;
 	if (diff >> COUNT_1S_SHIFT) { // Hyper fast (diff > 128)

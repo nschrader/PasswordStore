@@ -46,6 +46,12 @@ typedef enum {
 	STATE_SEND
 } transmission_state_t;
 
+typedef enum {
+	DISPLAY_MENU_PIN,
+	DISPLAY_MENU_LANGUAGE,
+	DISPLAY_MENU_SENT
+} display_menu_t;
+
 static uint8_t messageState = STATE_DONE;
 static void * messagePtr = NULL;
 static uint8_t messageCharNext = TRUE;
@@ -84,36 +90,47 @@ static uint8_t buildReport() {
 volatile uint8_t cycleCount = 0;
 static volatile uint8_t innerCycleCount = 0;
 static uint8_t displayDigitIndex = 0;
+static uint8_t displayMenuIndex = DISPLAY_MENU_PIN;
 
 static void loopTasks() {
 	// Hyper fast 256-devider
 	if (!innerCycleCount)
 		cycleCount++;
 	innerCycleCount++;
-	
+
 	// keep the watchdog happy
 	wdt_reset();
 	usbPoll();
-	
+
 	// characters are sent after the initial LED state from host to wait until device is recognized
 	if (usbInterruptIsReady() && messageState == STATE_SEND && LedState != 0xff){
 		messageState = buildReport();
 		usbSetInterrupt((void *) &keyboardReport, sizeof (keyboardReport));
 	}
+
 	buttonPoll();
-	if (buttonState == LONG_PRESS) {
-		displayLanguage();
-		displayDigitIndex = 0xff;
-	}
-	if (buttonState == SHORT_PRESS)
-		displayDigitIndex++;
-	if (displayDigitIndex == 4) {
-			displayDigitIndex = 0xff;
-	        messagePtr = NULL;
-	        messageState = STATE_SEND;
-	        displaySent();
-	} else if (displayDigitIndex != 0xff)
+	if (displayMenuIndex == DISPLAY_MENU_PIN){
+		if (buttonState == LONG_PRESS)
+			displayMenuIndex = DISPLAY_MENU_LANGUAGE;
+		else if (buttonState == SHORT_PRESS){
+			displayDigitIndex++;
+			if (displayDigitIndex == 4){
+				displayMenuIndex = DISPLAY_MENU_SENT;
+				messagePtr = NULL;
+				messageState = STATE_SEND;
+			}
+		}
 		countDisplay(displayDigitIndex);
+	} else if (displayMenuIndex == DISPLAY_MENU_LANGUAGE) {
+		displayLanguage();
+		if (buttonState == SHORT_PRESS) {
+			displayMenuIndex = DISPLAY_MENU_PIN;
+			displayDigitIndex = 0;
+			memset(displayRegisterIndex, _0, sizeof (displayRegisterIndex));
+			countDisplay(displayDigitIndex);
+		}
+	} else // displayMenuIndex == DISPLAY_MENU_SENT
+		displaySent();
 }
 
 int main() {

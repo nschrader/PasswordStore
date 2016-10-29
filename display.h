@@ -39,7 +39,8 @@
 #define DIG_OFF() PORTD |= 0x53
 
 extern const __flash uint8_t displayRegister[];
-extern uint8_t displayRegisterIndex[];
+extern uint8_t menuPage;
+extern uint8_t displayRegisterIndex[4];
 
 #define _D _0
 #define _S _5
