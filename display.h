@@ -38,16 +38,19 @@
 #define DIG_OUTPUT() { DDRD |= 0x53; DDRB = 0xff; }
 #define DIG_OFF() PORTD |= 0x53
 
-extern __flash const uint8_t displayRegister[];
+extern const __flash uint8_t displayRegister[];
+extern uint8_t displayRegisterIndex[];
 
 #define _D _0
 #define _S _5
+#define _T _7
 typedef enum {
-	_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _E, _F, _N, _R, _RP
+	__, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _E, _F, _N, _R, _RP
 } display_character_t;
 
 void writeDisplayRegister(uint8_t x);
-void multiplexDisplay();
 void countDisplay(uint8_t digit);
+void displaySent();
+void displayLanguage();
 
 #endif

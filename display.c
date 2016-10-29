@@ -29,8 +29,12 @@
 #define COUNT_1S_SHIFT 7
 
 const __flash uint8_t displayRegister[] = {
-	0xfa, 0x12, 0xce, 0x9e, 0x36, 0xbc, 0xfc, 0x1a, 0xfe, 0xbe, 0xec,
-	0x6c, 0x7a, 0x7e, 0x7f
+	0x04, 0xfa, 0x12, 0xce, 0x9e, 0x36, 0xbc, 0xfc, 0x1a, 0xfe, 0xbe,
+	0xec, 0x6c, 0x7a, 0x7e, 0x7f
+};
+
+static const __flash uint8_t languageMenu[] = {
+	_D, _E, _E, _N, _F, _R
 };
 
 // Workaround for weird problem when using PORTB register and extern variables in macro
@@ -39,29 +43,9 @@ void writeDisplayRegister(uint8_t x) {
 }
 
 static uint8_t countCycleCount = 0;
-static uint8_t displayRegisterIndex[4] = {
+uint8_t displayRegisterIndex[] = {
 	_0, _0, _0, _0
 };
-
-void multiplexDisplay() {
-	if ((cycleCount & 0x03) == 0x00) {
-		DIG4_OFF();
-		writeDisplayRegister(displayRegister[displayRegisterIndex[0]]);
-		DIG1_ON();
-	} else if ((cycleCount & 0x03) == 0x01) {
-		DIG1_OFF();
-		writeDisplayRegister(displayRegister[displayRegisterIndex[1]]);
-		DIG2_ON();
-	} else if ((cycleCount & 0x03) == 0x02) {
-		DIG2_OFF();
-		writeDisplayRegister(displayRegister[displayRegisterIndex[2]]);
-		DIG3_ON();
-	} else {
-		DIG3_OFF();
-		writeDisplayRegister(displayRegister[displayRegisterIndex[3]]);
-		DIG4_ON();
-	}
-}
 
 void countDisplay(uint8_t digit) {
 	uint8_t diff = cycleCount - countCycleCount;
@@ -72,4 +56,25 @@ void countDisplay(uint8_t digit) {
 			displayRegisterIndex[digit]++;
 		countCycleCount = cycleCount;
 	}
+}
+
+void displaySent() {
+	displayRegisterIndex[0] = _S;
+	displayRegisterIndex[1] = _E;
+	displayRegisterIndex[2] = _N;
+	displayRegisterIndex[3] = _T;
+}
+
+static uint8_t menuPage = 0;
+void displayLanguage() {
+	uint8_t diff = cycleCount - countCycleCount;
+	if (diff >> COUNT_1S_SHIFT) { // Hyper fast (diff > 128)
+		displayRegisterIndex[0] = languageMenu[menuPage++];
+		displayRegisterIndex[1] = languageMenu[menuPage++];
+		displayRegisterIndex[2] = __;
+		displayRegisterIndex[3] = __;
+		countCycleCount = cycleCount;
+	}
+	if (menuPage == sizeof (languageMenu))
+		menuPage = 0;
 }

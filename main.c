@@ -85,6 +85,37 @@ volatile uint8_t cycleCount = 0;
 static volatile uint8_t innerCycleCount = 0;
 static uint8_t displayDigitIndex = 0;
 
+static void loopTasks() {
+	// Hyper fast 256-devider
+	if (!innerCycleCount)
+		cycleCount++;
+	innerCycleCount++;
+	
+	// keep the watchdog happy
+	wdt_reset();
+	usbPoll();
+	
+	// characters are sent after the initial LED state from host to wait until device is recognized
+	if (usbInterruptIsReady() && messageState == STATE_SEND && LedState != 0xff){
+		messageState = buildReport();
+		usbSetInterrupt((void *) &keyboardReport, sizeof (keyboardReport));
+	}
+	buttonPoll();
+	if (buttonState == LONG_PRESS) {
+		displayLanguage();
+		displayDigitIndex = 0xff;
+	}
+	if (buttonState == SHORT_PRESS)
+		displayDigitIndex++;
+	if (displayDigitIndex == 4) {
+			displayDigitIndex = 0xff;
+	        messagePtr = NULL;
+	        messageState = STATE_SEND;
+	        displaySent();
+	} else if (displayDigitIndex != 0xff)
+		countDisplay(displayDigitIndex);
+}
+
 int main() {
 	memset(&keyboardReport, 0, sizeof (keyboardReport));
 	wdt_enable(WDTO_1S); // enable 1s watchdog timer
@@ -108,32 +139,27 @@ int main() {
 	DIG_OUTPUT();
 	DIG_OFF();
 
-	while (1){
-		// keep the watchdog happy
-		wdt_reset();
-		usbPoll();
-		buttonPoll();
-		
-		if (buttonState == LONG_PRESS && messageState != STATE_SEND){
-			messagePtr = NULL;
-			messageState = STATE_SEND;
-		}
-		if (buttonState == SHORT_PRESS)
-			displayDigitIndex++;
-		countDisplay(displayDigitIndex);
-			
-		// characters are sent after the initial LED state from host to wait until device is recognized
-		if (usbInterruptIsReady() && messageState == STATE_SEND && LedState != 0xff){
-			messageState = buildReport();
-			usbSetInterrupt((void *) &keyboardReport, sizeof (keyboardReport));
-		}
-		
-		multiplexDisplay();
-		
-		// Hyper fast 256-devider
-		if (!innerCycleCount)
-			cycleCount++;
-		innerCycleCount++;		
+	while (TRUE){
+		loopTasks();
+		DIG4_OFF();
+		writeDisplayRegister(displayRegister[displayRegisterIndex[0]]);
+		DIG1_ON();
+
+		loopTasks();
+		DIG1_OFF();
+		writeDisplayRegister(displayRegister[displayRegisterIndex[1]]);
+		DIG2_ON();
+
+		loopTasks();
+		DIG2_OFF();
+		writeDisplayRegister(displayRegister[displayRegisterIndex[2]]);
+		DIG3_ON();
+
+		loopTasks();
+		DIG3_OFF();
+		writeDisplayRegister(displayRegister[displayRegisterIndex[3]]);
+		DIG4_ON();
 	}
+
 	return 0;
 }
