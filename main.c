@@ -23,7 +23,6 @@
 
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
-#include <avr/eeprom.h>
 
 #include <util/delay.h>
 #include <string.h>
@@ -33,59 +32,13 @@
 #include "usb.h"
 #include "button.h"
 #include "display.h"
-#include "passwordSeed.h"
-
-#define CAPS_LOCK_LED 0x02
-#define CAPS_LOCK_KEY 0x39
-
-#define SHIFT_MODIFIER 0x20
-#define NO_MODIFIER 0x00
-
-typedef enum {
-	STATE_DONE,
-	STATE_SEND
-} transmission_state_t;
+#include "keyboard.h"
 
 typedef enum {
 	DISPLAY_MENU_PIN,
 	DISPLAY_MENU_LANGUAGE,
 	DISPLAY_MENU_SENT
 } display_menu_t;
-
-static uint8_t messageState = STATE_DONE;
-static void * messagePtr = NULL;
-static uint8_t messageCharNext = TRUE;
-static uint8_t messageRestoreCapsLock = FALSE;
-
-static uint8_t buildReport() {
-	if (messageState == STATE_DONE || messagePtr >= NULL + PASSWORD_LENGTH){ // End of transmission
-		if (messageRestoreCapsLock){
-			keyboardReport.modifier = NO_MODIFIER;
-			keyboardReport.keycode[0] = CAPS_LOCK_KEY;
-			messageRestoreCapsLock = FALSE;
-			LedState |= CAPS_LOCK_LED;
-			return STATE_SEND;
-		}
-		memset(&keyboardReport, 0, sizeof (keyboardReport));
-		return STATE_DONE;
-	}
-	if (LedState & CAPS_LOCK_LED){ // unlocks kaps
-		keyboardReport.modifier = NO_MODIFIER;
-		keyboardReport.keycode[0] = CAPS_LOCK_KEY;
-		messageRestoreCapsLock = TRUE;
-		LedState ^= CAPS_LOCK_LED;
-		return STATE_SEND;
-	}
-	if (messageCharNext){ // send a keypress
-		passwordSeed s;
-		eeprom_read_block(&s, messagePtr++, sizeof (passwordSeed));
-		keyboardReport.modifier = (s.modifier) ? SHIFT_MODIFIER : NO_MODIFIER;
-		keyboardReport.keycode[0] = s.keycode;
-	} else // send a keyrelease
-		memset(&keyboardReport, 0, sizeof (keyboardReport));
-	messageCharNext = !messageCharNext; // invert
-	return STATE_SEND;
-}
 
 volatile uint8_t cycleCount = 0;
 static volatile uint8_t innerCycleCount = 0;
@@ -116,8 +69,7 @@ static void loopTasks() {
 			displayDigitIndex++;
 			if (displayDigitIndex == 4){
 				displayMenuIndex = DISPLAY_MENU_SENT;
-				messagePtr = NULL;
-				messageState = STATE_SEND;
+				startTransmission();
 			}
 		}
 		countDisplay(displayDigitIndex);

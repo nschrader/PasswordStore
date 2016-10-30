@@ -34,7 +34,7 @@ const __flash uint8_t displayRegister[] = {
 };
 
 static const __flash uint8_t languageMenu[] = {
-	_D, _E, _E, _N, _F, _R
+	_E, _N, _D, _E, _F, _R
 };
 
 // Workaround for weird problem when using PORTB register and extern variables in macro
@@ -42,7 +42,8 @@ void writeDisplayRegister(uint8_t x) {
 	PORTB = x;
 }
 
-uint8_t menuPage = 0;
+//This way 0 will never occur
+uint8_t menuPage = 2;
 uint8_t displayRegisterIndex[] = {
 	_0, _0, _0, _0
 };
@@ -68,6 +69,8 @@ void displaySent() {
 
 void displayLanguage() {
 	uint8_t diff = cycleCount - countCycleCount;
+	if (menuPage == sizeof (languageMenu))
+		menuPage = 0;
 	if (diff >> COUNT_1S_SHIFT) { // Hyper fast (diff > 128)
 		displayRegisterIndex[0] = languageMenu[menuPage++];
 		displayRegisterIndex[1] = languageMenu[menuPage++];
@@ -75,6 +78,4 @@ void displayLanguage() {
 		displayRegisterIndex[3] = __;
 		countCycleCount = cycleCount;
 	}
-	if (menuPage == sizeof (languageMenu))
-		menuPage = 0;
 }
