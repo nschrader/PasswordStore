@@ -1,8 +1,8 @@
 # AVR cross-compiler toolchain is used here
 HOST_CC = gcc
-HOST_CFLAGS = -std=c99
+HOST_CFLAGS = -Icommon -std=c99
 CROSS_CC = avr-gcc
-CROSS_CFLAGS = -Wall -Os -Iusbdrv -Iutil -mmcu=$(PARTNO) -DF_CPU=$(CRYSTAL) -std=gnu99
+CROSS_CFLAGS = -Wall -Os -Iusbdrv -Iutil -Icommon -mmcu=$(PARTNO) -DF_CPU=$(CRYSTAL) -std=gnu99
 CROSS_OBJCOPY = avr-objcopy
 CROSS_OBJFLAGS = -j .text -j .data -O ihex
 DUDE = avrdude
@@ -13,7 +13,7 @@ PARTNO = attiny4313
 CRYSTAL = 12000000
 
 # Object files for the firmware (usbdrv/oddebug.o not strictly needed I think)
-CROSS_OBJECTS = usbdrv/usbdrv.o usbdrv/oddebug.o usbdrv/usbdrvasm.o button.o display.o keyboard.o main.o usb.o
+CROSS_OBJECTS = usbdrv/usbdrv.o usbdrv/oddebug.o usbdrv/usbdrvasm.o button.o display.o keyboard.o main.o usb.o common/random.o
 
 # Source files for host utils
 HOST_OBJECTS = util/passwordSeed.o
