@@ -42,7 +42,7 @@ void writeDisplayRegister(uint8_t x) {
 	PORTB = x;
 }
 
-//This way 0 will never occur
+// This way 0 will never occur
 uint8_t menuPage = 2;
 uint8_t displayRegisterIndex[] = {
 	_0, _0, _0, _0
@@ -51,7 +51,7 @@ uint8_t displayRegisterIndex[] = {
 static uint8_t countCycleCount = 0;
 void countDisplay(uint8_t digit) {
 	uint8_t diff = cycleCount - countCycleCount;
-	if (diff >> COUNT_1S_SHIFT) { // Hyper fast (diff > 128)
+	if (diff >> COUNT_1S_SHIFT){ // Hyper fast (diff > 128)
 		if (displayRegisterIndex[digit] == _9)
 			displayRegisterIndex[digit] = _0;
 		else
@@ -71,11 +71,16 @@ void displayLanguage() {
 	uint8_t diff = cycleCount - countCycleCount;
 	if (menuPage == sizeof (languageMenu))
 		menuPage = 0;
-	if (diff >> COUNT_1S_SHIFT) { // Hyper fast (diff > 128)
+	if (diff >> COUNT_1S_SHIFT){ // Hyper fast (diff > 128)
 		displayRegisterIndex[0] = languageMenu[menuPage++];
 		displayRegisterIndex[1] = languageMenu[menuPage++];
 		displayRegisterIndex[2] = __;
 		displayRegisterIndex[3] = __;
 		countCycleCount = cycleCount;
 	}
+}
+
+uint32_t getPIN() {
+	return displayRegisterIndex[0] + 10 * displayRegisterIndex[1] +
+	       100 * displayRegisterIndex[2] + 1000 * displayRegisterIndex[3];
 }

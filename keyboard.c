@@ -7,6 +7,7 @@
 #include "main.h"
 #include "usb.h"
 #include "passwordSeed.h"
+#include "random.h"
 
 /* Conversion table for letters:
  * EN	A	M	Q	W	Y	Z
@@ -35,9 +36,8 @@
 #define NO_MODIFIER 0x00
 
 typedef enum {
-	LANG_EN = 1, LANG_DE, LANG_FR
+	LANG_EN = 2, LANG_DE = 4, LANG_FR = 6
 } language_t;
-static uint8_t language = LANG_EN;
  
 static const __flash uint8_t letterConversationTableEN[] = {
 	0x04, 0x10, 0x14, 0x1a, 0x1c, 0x1d
@@ -54,7 +54,7 @@ static const __flash uint8_t letterConversationTableDE[] = {
 static const __flash uint8_t *letterConversationTable;
 
 static uint8_t correctLetter(passwordSeed *s) {
-	if (language == LANG_EN)
+	if (menuPage == LANG_EN)
 		return TRUE;
 	for(uint8_t i = 0; i < sizeof(letterConversationTableEN); i++) {
 		if (s->keycode == letterConversationTableEN[i]) {
@@ -67,16 +67,16 @@ static uint8_t correctLetter(passwordSeed *s) {
 }
 
 static uint8_t correctDigit(passwordSeed *s) {
-	if (language != LANG_FR)
+	if (menuPage == LANG_DE || menuPage == LANG_EN)
 		return TRUE;
-	if (!s->modifier && s->keycode >= 0x1e && s->keycode <= 0x27) {
+	if (s->modifier == 0 && s->keycode >= 0x1e && s->keycode <= 0x27) {
 		s->modifier = 1;
 		return TRUE;
 	}
 	return FALSE;
 }
 
-#define CS(x) ((x << 2) + 0x02) // USB keycode to capital case passwordSeed
+#define CS(x) ((x << 2) + 0x02) // USB keycode to uppuer case passwordSeed
 #define LS(x) (x << 2) // USB keycode to lower case passwordSeed
 
 static const __flash uint8_t signConversionTableEN[] = {
@@ -100,7 +100,7 @@ static const __flash uint8_t signConversionTableDE[] = {
 static const __flash uint8_t *signConversionTable;
 
 static uint8_t correctSign(uint8_t *s) {
-	if (language == LANG_EN)
+	if (menuPage == LANG_EN)
 		return TRUE;
 	for(uint8_t i = 0; i < sizeof (signConversionTableEN); i++) {
 		if (*s == signConversionTableEN[i]) {
@@ -110,7 +110,7 @@ static uint8_t correctSign(uint8_t *s) {
 			return FALSE;
 	}
 	return FALSE;
-}
+} 
 
 uint8_t messageState = STATE_DONE;
 static void * messagePtr = NULL;
@@ -138,16 +138,15 @@ uint8_t buildReport() {
 	}
 	if (messageCharNext){ // send a keypress
 		passwordSeed s;
-		eeprom_read_block(&s, messagePtr++, sizeof (passwordSeed));
-		/*if (!correctLetter(&s)) {
-			if (!correctDigit(&s))
-				;//correctSign((uint8_t*) &s);
-		}*/
-		correctLetter(&s);
-		correctDigit(&s);
-		correctSign((uint8_t*) &s);
+		eeprom_read_block(&s, messagePtr++ /*NULL + random()*/, sizeof (passwordSeed));
+		if (!correctSign((uint8_t*) &s)) {
+			if (!correctLetter(&s)) {
+				correctDigit(&s);
+			}
+		}
 		keyboardReport.modifier = (s.modifier) ? SHIFT_MODIFIER : NO_MODIFIER;
 		keyboardReport.keycode[0] = s.keycode;
+		//messagePtr++;
 	} else // send a keyrelease
 		memset(&keyboardReport, 0, sizeof (keyboardReport));
 	messageCharNext = !messageCharNext; // invert
@@ -155,13 +154,13 @@ uint8_t buildReport() {
 }
 
 void startTransmission() {
-	messagePtr = NULL;
+	messagePtr = NULL + ;
 	messageState = STATE_SEND;
-	language = menuPage / 2;
-	if (language == LANG_EN) {
+	//srandom(getPIN());
+	if (menuPage == LANG_EN) {
 		letterConversationTable = letterConversationTableEN;
 		signConversionTable = signConversionTableEN;
-	}  else if (language == LANG_DE) { 
+	}  else if (menuPage == LANG_DE) { 
 		letterConversationTable = letterConversationTableDE;
 		signConversionTable = signConversionTableDE;
 	} else { // language == LANG_FR

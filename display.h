@@ -53,5 +53,6 @@ void writeDisplayRegister(uint8_t x);
 void countDisplay(uint8_t digit);
 void displaySent();
 void displayLanguage();
+uint32_t getPIN();
 
 #endif
