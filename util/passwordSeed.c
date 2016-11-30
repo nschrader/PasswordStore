@@ -39,17 +39,18 @@
 #define validKeycode(x) (isLetter(x) || isDigitUpperCase(x) || \
 	                     isDigitLowerCase(x) || isSignUpperCase(x) || isSignLowerCase(x))
 
-int main(int argc, char * argv[]) {
-	passwordSeed s[PASSWORD_POOL];
-	FILE * out;
-
+static inline FILE *openFile(int argc, char *argv[]) {
+	FILE *out;
 	if (argc > 1)
 		out = fopen(argv[1], "w+b");
 	else
 		out = fopen("eeprom.bin", "w+b");
 	if (out == NULL)
-		return EXIT_FAILURE;
+		exit(EXIT_FAILURE);
+	return out;
+}
 
+static inline void generateSeed(passwordSeed s[]) {
 	memset(s, 0, sizeof (s));
 	for (int c_modifier = 0, c_keycode = 0; c_modifier < PASSWORD_POOL || c_keycode < PASSWORD_POOL; ){
 		uchar ch = getchar();
@@ -60,8 +61,12 @@ int main(int argc, char * argv[]) {
 			    (isDigitLowerCase(s[c_keycode].keycode) && isSignLowerCase(s[c_keycode].keycode)) ? 0 : (ch % 2);
 		c_modifier++;
 	}
+}
 
+int main(int argc, char * argv[]) {
+	passwordSeed s[PASSWORD_POOL];
+	FILE * out = openFile(argc, argv);
+	generateSeed(s);
 	fwrite(s, sizeof (passwordSeed), PASSWORD_POOL, out);
-
 	return EXIT_SUCCESS;
 }

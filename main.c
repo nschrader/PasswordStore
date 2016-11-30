@@ -45,23 +45,26 @@ static volatile uint8_t innerCycleCount = 0;
 static uint8_t displayDigitIndex = 0;
 static uint8_t displayMenuIndex = DISPLAY_MENU_PIN;
 
-static void loopTasks() {
-	// Hyper fast 256-devider
+static inline void hyperFast256CycleDevider() {
 	if (!innerCycleCount)
 		cycleCount++;
 	innerCycleCount++;
+}
 
-	// keep the watchdog happy
+static inline void keepWatchdogHappy() {
 	wdt_reset();
 	usbPoll();
+}
 
+static inline void processUSB() {
 	// characters are sent after the initial LED state from host to wait until device is recognized
 	if (usbInterruptIsReady() && messageState == STATE_SEND && LedState != 0xff){
 		messageState = buildReport();
 		usbSetInterrupt((void *) &keyboardReport, sizeof (keyboardReport));
 	}
+}
 
-	buttonPoll();
+static inline void menuLogic() {
 	if (displayMenuIndex == DISPLAY_MENU_PIN){
 		if (buttonState == LONG_PRESS)
 			displayMenuIndex = DISPLAY_MENU_LANGUAGE;
@@ -73,9 +76,9 @@ static void loopTasks() {
 			}
 		}
 		countDisplay(displayDigitIndex);
-	} else if (displayMenuIndex == DISPLAY_MENU_LANGUAGE) {
+	} else if (displayMenuIndex == DISPLAY_MENU_LANGUAGE){
 		displayLanguage();
-		if (buttonState == SHORT_PRESS) {
+		if (buttonState == SHORT_PRESS){
 			displayMenuIndex = DISPLAY_MENU_PIN;
 			displayDigitIndex = 0;
 			memset(displayRegisterIndex, _0, sizeof (displayRegisterIndex));
@@ -85,11 +88,13 @@ static void loopTasks() {
 		displaySent();
 }
 
-int main() {
+static inline void setUpUSB() {
 	memset(&keyboardReport, 0, sizeof (keyboardReport));
 	wdt_enable(WDTO_1S); // enable 1s watchdog timer
 	usbInit();
+}
 
+static inline void reconnectUSB() {
 	// enforce re-enumeration after 500ms
 	usbDeviceDisconnect();
 	for (uint8_t i = 0; i < 250; i++){
@@ -97,17 +102,17 @@ int main() {
 		_delay_ms(2);
 	}
 	usbDeviceConnect();
+}
 
-	// Enable interrupts after re-enumeration
-	sei();
+static void loopTasks() {
+	hyperFast256CycleDevider();
+	keepWatchdogHappy();
+	processUSB();
+	buttonPoll();
+	menuLogic();
+}
 
-	// Set-up GPIOs
-	digitalInputButton();
-
-	// Set-up display
-	DIG_OUTPUT();
-	DIG_OFF();
-
+static inline void displayLoop() {
 	while (TRUE){
 		loopTasks();
 		DIG4_OFF();
@@ -129,6 +134,23 @@ int main() {
 		writeDisplayRegister(displayRegister[displayRegisterIndex[3]]);
 		DIG4_ON();
 	}
+}
+
+int main() {
+	setUpUSB();
+	reconnectUSB();
+
+	// Enable interrupts after re-enumeration
+	sei();
+
+	// Set-up GPIOs
+	digitalInputButton();
+
+	// Set-up display
+	DIG_OUTPUT();
+	DIG_OFF();
+
+	displayLoop();
 
 	return 0;
 }

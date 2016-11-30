@@ -30,24 +30,27 @@
 uint8_t buttonState = NO_PRESS;
 static uint8_t buttonPushCycleCount = 0;
 static uint8_t lastButton = FALSE;
-
 static uint8_t lastCalculatedButtonState = NO_PRESS;
+
+static inline void pressButton(uint8_t * calculatedButtonState) {
+	if (!lastButton) // Button captures rising Edge
+		buttonPushCycleCount = cycleCount;
+	else if (lastCalculatedButtonState == LONG_PRESS){ // Avoid problems with counter overflow
+		buttonState = NO_PRESS;
+		return;
+	}
+	uint8_t diff = cycleCount - buttonPushCycleCount;
+	if (diff >> BUTTON_LONG_PRESS_SHIFT) // Hyper fast (diff > 128)
+		*calculatedButtonState = LONG_PRESS;
+	else if (diff >> BUTTON_DEBOUNCING_SHIFT) // Hyper fast (diff > 16)
+		*calculatedButtonState = SHORT_PRESS;
+}
+
 void buttonPoll() {
 	uint8_t calculatedButtonState = NO_PRESS;
 	uint8_t button = digitalReadButton();
-	if (button) {
-		if (!lastButton) // Button captures rising Edge
-			buttonPushCycleCount = cycleCount;
-		else if (lastCalculatedButtonState == LONG_PRESS) { // Avoid problems with counter overflow
-			buttonState = NO_PRESS;
-			return;
-		}
-		uint8_t diff = cycleCount - buttonPushCycleCount;
-		if (diff >> BUTTON_LONG_PRESS_SHIFT) // Hyper fast (diff > 128)
-			calculatedButtonState = LONG_PRESS;
-		else if (diff >> BUTTON_DEBOUNCING_SHIFT) // Hyper fast (diff > 16)
-			calculatedButtonState = SHORT_PRESS;
-	}
+	if (button)
+		pressButton(&calculatedButtonState);
 	if (calculatedButtonState == lastCalculatedButtonState) // No rising or falling edge
 		buttonState = NO_PRESS;
 	else
