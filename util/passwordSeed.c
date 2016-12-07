@@ -31,14 +31,6 @@
 
 #include "passwordSeed.h"
 
-#define isLetter(x) (x >= 0x04 && x <= 0x1d)
-#define isDigitUpperCase(x) ((x >= 0x24 && x <= 0x27) || x == 0x21 || x == 0x22)
-#define isDigitLowerCase(x) ((x >= 0x1e && x <= 0x20) || x == 0x23)
-#define isSignUpperCase(x) (x == 0x2d || x == 0x2e || x == 0x33 || x == 0x34 || x == 0x38)
-#define isSignLowerCase(x) (x == 0x36 || x == 0x37)
-#define validKeycode(x) (isLetter(x) || isDigitUpperCase(x) || \
-	                     isDigitLowerCase(x) || isSignUpperCase(x) || isSignLowerCase(x))
-
 static inline FILE *openFile(int argc, char *argv[]) {
 	FILE *out;
 	if (argc > 1)
@@ -57,8 +49,13 @@ static inline void generateSeed(passwordSeed s[]) {
 		if (validKeycode(ch) && c_keycode < PASSWORD_POOL)
 			s[c_keycode++].keycode = ch;
 		else if (c_modifier < PASSWORD_POOL)
-			s[c_modifier++].modifier =
-			    (isDigitLowerCase(s[c_keycode].keycode) && isSignLowerCase(s[c_keycode].keycode)) ? 0 : (ch % 2);
+			//TODO: Looks weird. Maybe I forgot to set modifier to 1 for upper case. To be checked...
+			if (validOnlyLower(s[c_keycode].keycode))
+				s[c_modifier++].modifier = 0;
+			else if (validOnlyUpper(s[c_keycode].keycode))
+				s[c_modifier++].modifier = 1;
+			else
+				s[c_modifier++].modifier = (ch % 2);
 		c_modifier++;
 	}
 }
