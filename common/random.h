@@ -35,8 +35,8 @@
  
 #define RANDOM_MAX UINT8_MAX
 
-uint8_t random(void);
-void srandom(unsigned long seed);
+uint8_t random2(void);
+void srandom2(unsigned long seed);
 
 #endif
 

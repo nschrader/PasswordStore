@@ -56,10 +56,10 @@ static uint8_t do_random(unsigned long * ctx) {
 	return ((*ctx = x) % ((uint8_t) RANDOM_MAX + 1));
 }
 
-uint8_t random(void) {
+uint8_t random2(void) {
 	return do_random(&next);
 }
 
-void srandom(unsigned long seed) {
+void srandom2(unsigned long seed) {
 	next = seed;
 }

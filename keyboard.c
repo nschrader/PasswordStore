@@ -1,3 +1,27 @@
+/*
+ * keyboard.c
+ * 
+ * Copyright 2016 Nick Schrader <nick.schrader@mailbox.org>
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301, USA.
+ * 
+ * 
+ */
+
+
 #include <avr/eeprom.h>
 #include <stdint.h>
 #include <string.h>
@@ -8,26 +32,7 @@
 #include "usb.h"
 #include "passwordSeed.h"
 #include "random.h"
-
-/* Conversion table for letters:
- * EN	A	M	Q	W	Y	Z
- * FR	Q	;	A	Z	Y	W	
- * DE	A	M	Q	W	Z	Y
- * 
- * Conversion for digits:
- * EN	1-0
- * FR	Shift 1-0
- * DE	1-0
- * 
- * Conversion table for signs:
- * Sign			$	%	&	*	(	)	-	_	=	+	;	:	'	"	.	,	/	?
- * EN									-		=		;		'		.	,	/
- * EN Shift		4	5	7	8	9	0		-		=		;		'				/
- * FR			]		1	\	5	-	6	8	=		,	.	4	3		M
- * FR Shift			'								=					,		.	M
- * DE									/						\		.	,	
- * DE Shift		4	5	6	[	8	9		/	0	]	,	.		2			7	-
- */
+#include "conversionTable.h"
  
 #define CAPS_LOCK_LED 0x02
 #define CAPS_LOCK_KEY 0x39
@@ -35,74 +40,50 @@
 #define SHIFT_MODIFIER 0x20
 #define NO_MODIFIER 0x00
 
+#define KEYCODE_A 0x1e
+#define KEYCODE_Z 0x27
+
 typedef enum {
 	LANG_EN = 2, LANG_DE = 4, LANG_FR = 6
 } language_t;
- 
-static const __flash uint8_t letterConversationTableEN[] = {
-	0x04, 0x10, 0x14, 0x1a, 0x1c, 0x1d
-};
 
-static const __flash uint8_t letterConversationTableFR[] = {
-	0x14, 0x33, 0x04, 0x1d, 0x1c, 0x1a
-};
-
-static const __flash uint8_t letterConversationTableDE[] = {
-	0x04, 0x10, 0x14, 0x1a, 0x1d, 0x1c
-};
-
-static const __flash uint8_t *letterConversationTable;
+static const __flash uint8_t *letterConversionTable;
 
 static uint8_t correctLetter(passwordSeed *s) {
 	if (menuPage == LANG_EN)
 		return TRUE;
-	for(uint8_t i = 0; i < sizeof(letterConversationTableEN); i++) {
-		if (s->keycode == letterConversationTableEN[i]) {
-			s->keycode = letterConversationTable[i];
+	for(uint8_t i = 0; i < letterConversionTableLenght; i++) {
+		if (s->keycode == letterConversionTableEN[i]) {
+			s->keycode = letterConversionTable[i];
 			return TRUE;
-		} else if (s->keycode < letterConversationTableEN[i])
+		} else if (s->keycode < letterConversionTableEN[i])
 			return FALSE;
 	}
 	return FALSE;
 }
 
+/* Conversion for digits:
+ * EN	1-0
+ * FR	Shift 1-0
+ * DE	1-0
+ */
+
 static uint8_t correctDigit(passwordSeed *s) {
 	if (menuPage == LANG_DE || menuPage == LANG_EN)
 		return TRUE;
-	if (s->modifier == 0 && s->keycode >= 0x1e && s->keycode <= 0x27) {
+	if (s->modifier == 0 && s->keycode >= KEYCODE_A && s->keycode <= KEYCODE_Z) {
 		s->modifier = 1;
 		return TRUE;
 	}
 	return FALSE;
 }
 
-#define CS(x) ((x << 2) + 0x02) // USB keycode to uppuer case passwordSeed
-#define LS(x) (x << 2) // USB keycode to lower case passwordSeed
-
-static const __flash uint8_t signConversionTableEN[] = {
-	CS(0x21), CS(0x22), CS(0x24), CS(0x25), CS(0x26), CS(0x27), 
-	LS(0x2d), CS(0x2d), LS(0x2e), CS(0x2e), LS(0x33), CS(0x33),
-	LS(0x34), CS(0x34), LS(0x36), LS(0x37), LS(0x38), CS(0x38)
-};
-
-static const __flash uint8_t signConversionTableFR[] = {
-	LS(0x30), CS(0x34), LS(0x1e), LS(0x31), LS(0x22), LS(0x2d), 
-	LS(0x23), LS(0x25), LS(0x2e), CS(0x2e), LS(0x36), LS(0x37),
-	LS(0x21), LS(0x20), CS(0x36), LS(0x10), CS(0x37), CS(0x10)
-};
-
-static const __flash uint8_t signConversionTableDE[] = {
-	CS(0x21), CS(0x22), CS(0x23), CS(0x2f), CS(0x25), CS(0x26), 
-	LS(0x38), CS(0x38), CS(0x27), CS(0x30), CS(0x36), CS(0x37),
-	LS(0x31), CS(0x1f), LS(0x37), LS(0x36), CS(0x24), CS(0x2d)
-};
-
 static const __flash uint8_t *signConversionTable;
 
 static uint8_t correctSign(uint8_t *s) {
 	if (menuPage == LANG_EN)
 		return TRUE;
-	for(uint8_t i = 0; i < sizeof (signConversionTableEN); i++) {
+	for(uint8_t i = 0; i < signConversionTableLenght; i++) {
 		if (*s == signConversionTableEN[i]) {
 			*s = signConversionTable[i];
 			return TRUE;
@@ -118,7 +99,7 @@ static uint8_t messageCharNext = TRUE;
 static uint8_t messageRestoreCapsLock = FALSE;
 
 uint8_t buildReport() {
-	if (messageState == STATE_DONE || messagePtr >= NULL + PASSWORD_LENGTH) { // End of transmission
+	if (messageState == STATE_DONE || messagePtr >= NULL + PASSWORD_LENGTH*3) { // End of transmission
 		if (messageRestoreCapsLock){
 			keyboardReport.modifier = NO_MODIFIER;
 			keyboardReport.keycode[0] = CAPS_LOCK_KEY;
@@ -138,7 +119,7 @@ uint8_t buildReport() {
 	}
 	if (messageCharNext){ // send a keypress
 		passwordSeed s;
-		eeprom_read_block(&s, messagePtr++ /*NULL + random()*/, sizeof (passwordSeed));
+		eeprom_read_block(&s, messagePtr++ /*NULL + random2()*/, sizeof (passwordSeed));
 		if (!correctSign((uint8_t*) &s)) {
 			if (!correctLetter(&s)) {
 				correctDigit(&s);
@@ -154,17 +135,17 @@ uint8_t buildReport() {
 }
 
 void startTransmission() {
-	messagePtr = NULL + ;
+	messagePtr = NULL + PASSWORD_LENGTH*2;
 	messageState = STATE_SEND;
-	//srandom(getPIN());
+	//srandom2(getPIN());
 	if (menuPage == LANG_EN) {
-		letterConversationTable = letterConversationTableEN;
+		letterConversionTable = letterConversionTableEN;
 		signConversionTable = signConversionTableEN;
 	}  else if (menuPage == LANG_DE) { 
-		letterConversationTable = letterConversationTableDE;
+		letterConversionTable = letterConversionTableDE;
 		signConversionTable = signConversionTableDE;
 	} else { // language == LANG_FR
-		letterConversationTable = letterConversationTableFR;
+		letterConversionTable = letterConversionTableFR;
 		signConversionTable = signConversionTableFR;
 	}	
 }

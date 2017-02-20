@@ -30,7 +30,6 @@
 
 #define isLetter(x) (x >= 0x04 && x <= 0x1d)
 #define isDigitUpperCase(x) ((x >= 0x24 && x <= 0x27) || x == 0x21 || x == 0x22)
-//TODO: Looks wierd too... Why didn't I permit 4, 5 7, 8, 9 and 0?
 #define isDigitLowerCase(x) (x >= 0x1e && x <= 0x27)
 #define isSignUpperCase(x) (x == 0x2d || x == 0x2e || x == 0x33 || x == 0x34 || x == 0x38)
 #define isSignLowerCase(x) (x == 0x36 || x == 0x37)

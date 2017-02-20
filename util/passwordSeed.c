@@ -31,8 +31,8 @@
 
 #include "passwordSeed.h"
 
-static inline FILE *openFile(int argc, char *argv[]) {
-	FILE *out;
+static inline FILE *openFile(int argc, char* argv[]) {
+	FILE* out;
 	if (argc > 1)
 		out = fopen(argv[1], "w+b");
 	else
@@ -43,26 +43,26 @@ static inline FILE *openFile(int argc, char *argv[]) {
 }
 
 static inline void generateSeed(passwordSeed s[]) {
-	memset(s, 0, sizeof (s));
-	for (int c_modifier = 0, c_keycode = 0; c_modifier < PASSWORD_POOL || c_keycode < PASSWORD_POOL; ){
+	for (int c_keycode = 0; c_keycode < PASSWORD_POOL;) {
 		uchar ch = getchar();
-		if (validKeycode(ch) && c_keycode < PASSWORD_POOL)
+		if (validKeycode(ch))
 			s[c_keycode++].keycode = ch;
-		else if (c_modifier < PASSWORD_POOL)
-			//TODO: Looks weird. Maybe I forgot to set modifier to 1 for upper case. To be checked...
-			if (validOnlyLower(s[c_keycode].keycode))
-				s[c_modifier++].modifier = 0;
-			else if (validOnlyUpper(s[c_keycode].keycode))
-				s[c_modifier++].modifier = 1;
-			else
-				s[c_modifier++].modifier = (ch % 2);
-		c_modifier++;
+	}
+	for (int c_modifier = 0; c_modifier < PASSWORD_POOL; c_modifier++) {
+		uchar ch = getchar();
+		if (validOnlyLower(s[c_modifier].keycode))
+			s[c_modifier].modifier = 0;
+		else if (validOnlyUpper(s[c_modifier].keycode))
+			s[c_modifier].modifier = 1;
+		else
+			s[c_modifier].modifier = (ch % 2);
 	}
 }
 
-int main(int argc, char * argv[]) {
+int main(int argc, char* argv[]) {
 	passwordSeed s[PASSWORD_POOL];
-	FILE * out = openFile(argc, argv);
+	memset(s, 0, sizeof (passwordSeed) * PASSWORD_POOL);
+	FILE* out = openFile(argc, argv);
 	generateSeed(s);
 	fwrite(s, sizeof (passwordSeed), PASSWORD_POOL, out);
 	return EXIT_SUCCESS;
