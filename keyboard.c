@@ -40,9 +40,6 @@
 #define SHIFT_MODIFIER 0x20
 #define NO_MODIFIER 0x00
 
-#define KEYCODE_A 0x1e
-#define KEYCODE_Z 0x27
-
 typedef enum {
 	LANG_EN = 2, LANG_DE = 4, LANG_FR = 6
 } language_t;
@@ -71,7 +68,7 @@ static uint8_t correctLetter(passwordSeed *s) {
 static uint8_t correctDigit(passwordSeed *s) {
 	if (menuPage == LANG_DE || menuPage == LANG_EN)
 		return TRUE;
-	if (s->modifier == 0 && s->keycode >= KEYCODE_A && s->keycode <= KEYCODE_Z) {
+	if (s->modifier == 0 && s->keycode >= KEYCODE_1 && s->keycode <= KEYCODE_0) {
 		s->modifier = 1;
 		return TRUE;
 	}

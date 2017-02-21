@@ -33,10 +33,13 @@
 #define USB_HID_CHAR_OVERHEAD 0x04
 #define USB_HID_DIGIT_OVERHEAD 0x1d
 
+#define KEYCODE_1 0x1e
+#define KEYCODE_0 0x27
+
 #define CS(x) ((x << 2) + 0x02) // USB keycode to upper case passwordSeed
 #define LS(x) (x << 2) // USB keycode to lower case passwordSeed
 
-#ifndef __flash
+#ifndef __AVR__
 #define __flash
 #endif
 

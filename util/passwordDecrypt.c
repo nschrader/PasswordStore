@@ -67,7 +67,7 @@ static inline char useSignConversionTable(passwordSeed s) {
 }
 
 static inline char handleDigits(passwordSeed s) {
-	if (s.keycode == 0x27 && s.modifier == 0)
+	if (s.keycode == KEYCODE_0 && s.modifier == 0)
 		return '0';
 	else
 		return LOWER_DIGIT_ASCII + s.keycode - USB_HID_DIGIT_OVERHEAD;
