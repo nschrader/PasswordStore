@@ -46,7 +46,7 @@ extern uint8_t displayRegisterIndex[4];
 #define _S _5
 #define _T _7
 typedef enum {
-	__, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _E, _F, _N, _R, _RP
+	_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _E, _F, _N, _R, _RP, __
 } display_character_t;
 
 void writeDisplayRegister(uint8_t x);

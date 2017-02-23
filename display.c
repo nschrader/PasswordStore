@@ -29,8 +29,8 @@
 #define COUNT_1S_SHIFT 7
 
 const __flash uint8_t displayRegister[] = {
-	0x05, 0xfa, 0x12, 0xce, 0x9e, 0x36, 0xbc, 0xfc, 0x1a, 0xfe, 0xbe,
-	0xec, 0x6c, 0x7a, 0x7e, 0x7f
+	0xfa, 0x12, 0xce, 0x9e, 0x36, 0xbc, 0xfc, 0x1a, 0xfe, 0xbe,
+	0xec, 0x6c, 0x7a, 0x7e, 0x7f, 0x05
 };
 
 static const __flash uint8_t languageMenu[] = {
@@ -43,7 +43,7 @@ void writeDisplayRegister(uint8_t x) {
 }
 
 // This way 0 will never occur
-uint8_t menuPage = 2;
+uint8_t menuPage = 4;
 uint8_t displayRegisterIndex[] = {
 	_0, _0, _0, _0
 };
@@ -81,6 +81,6 @@ void displayLanguage() {
 }
 
 uint32_t getPIN() {
-	return displayRegisterIndex[0] + 10 * displayRegisterIndex[1] +
-	       100 * displayRegisterIndex[2] + 1000 * displayRegisterIndex[3];
+	return displayRegisterIndex[3] + 10 * displayRegisterIndex[2] +
+	       100 * displayRegisterIndex[1] + 1000 * displayRegisterIndex[0];
 }

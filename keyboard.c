@@ -116,7 +116,7 @@ uint8_t buildReport() {
 	}
 	if (messageCharNext){ // send a keypress
 		passwordSeed s;
-		eeprom_read_block(&s, messagePtr++ /*NULL + random2()*/, sizeof (passwordSeed));
+		eeprom_read_block(&s, NULL + random2(), sizeof (passwordSeed));
 		if (!correctSign((uint8_t*) &s)) {
 			if (!correctLetter(&s)) {
 				correctDigit(&s);
@@ -124,7 +124,7 @@ uint8_t buildReport() {
 		}
 		keyboardReport.modifier = (s.modifier) ? SHIFT_MODIFIER : NO_MODIFIER;
 		keyboardReport.keycode[0] = s.keycode;
-		//messagePtr++;
+		messagePtr++;
 	} else // send a keyrelease
 		memset(&keyboardReport, 0, sizeof (keyboardReport));
 	messageCharNext = !messageCharNext; // invert
@@ -134,7 +134,7 @@ uint8_t buildReport() {
 void startTransmission() {
 	messagePtr = NULL + PASSWORD_LENGTH*2;
 	messageState = STATE_SEND;
-	//srandom2(getPIN());
+	srandom2(getPIN());
 	if (menuPage == LANG_EN) {
 		letterConversionTable = letterConversionTableEN;
 		signConversionTable = signConversionTableEN;
