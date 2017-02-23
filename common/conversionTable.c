@@ -26,7 +26,10 @@
 #include "conversionTable.h"
 #include "passwordSeed.h"
 
-/* Conversion table for letters:
+/* See documentation:
+ * http://www.usb.org/developers/hidpage/Hut1_12v2.pdf
+ * 
+ * Conversion table for letters:
  * EN	A	M	Q	W	Y	Z
  * FR	Q	;	A	Z	Y	W	
  * DE	A	M	Q	W	Z	Y
@@ -50,13 +53,13 @@ const __flash uint8_t signConversionTableEN[] = {
 const __flash uint8_t signConversionTableFR[] = {
 	LS(0x30), CS(0x34), LS(0x1e), LS(0x31), LS(0x22), LS(0x2d), 
 	LS(0x23), LS(0x25), LS(0x2e), CS(0x2e), LS(0x36), LS(0x37),
-	LS(0x21), LS(0x20), CS(0x36), LS(0x10), CS(0x37), CS(0x10)
+	LS(0x21), LS(0x20), CS(0x37), LS(0x10), CS(0x36), CS(0x10)
 };
 
 const __flash uint8_t signConversionTableDE[] = {
 	CS(0x21), CS(0x22), CS(0x23), CS(0x2f), CS(0x25), CS(0x26), 
 	LS(0x38), CS(0x38), CS(0x27), CS(0x30), CS(0x36), CS(0x37),
-	LS(0x31), CS(0x1f), LS(0x37), LS(0x36), CS(0x24), CS(0x2d)
+	LS(0x31), CS(0x1f), LS(0x36), LS(0x37), CS(0x24), CS(0x2d)
 };
 
 const char signConversionTableASCII[] = {
