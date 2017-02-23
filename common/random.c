@@ -31,9 +31,9 @@
 #include "random.h"
 #include <stdint.h>
 
-static unsigned long next = 0;
+static uint32_t next = 0;
 
-static uint8_t do_random(unsigned long * ctx) {
+static uint8_t do_random(uint32_t * ctx) {
 	/*
 	 * Compute x = (7^5 * x) mod (2^31 - 1)
 	 * wihout overflowing 31 bits:
@@ -42,7 +42,7 @@ static uint8_t do_random(unsigned long * ctx) {
 	 * Park and Miller, Communications of the ACM, vol. 31, no. 10,
 	 * October 1988, p. 1195.
 	 */
-	long hi, lo, x;
+	int32_t hi, lo, x;
 
 	x = *ctx;
 	/* Can't be initialized with 0, so use another value. */
@@ -60,6 +60,6 @@ uint8_t random2(void) {
 	return do_random(&next);
 }
 
-void srandom2(unsigned long seed) {
+void srandom2(uint32_t seed) {
 	next = seed;
 }
