@@ -40,8 +40,8 @@
  * EN Shift		4	5	7	8	9	0		-		=		;		'				/
  * FR			]		1	\	5	-	6	8	=		,	.	4	3	M	
  * FR Shift			'								=						,	.	M
- * DE									/						\		,	.	
- * DE Shift		4	5	6	[	8	9		/	0	]	,	.		2			7	-
+ * DE									/			]					,	.	
+ * DE Shift		4	5	6	]	8	9		/	0		,	.	\	2			7	-
  */
 
 const __flash uint8_t signConversionTableEN[] = {
@@ -57,9 +57,9 @@ const __flash uint8_t signConversionTableFR[] = {
 };
 
 const __flash uint8_t signConversionTableDE[] = {
-	CS(0x21), CS(0x22), CS(0x23), CS(0x2f), CS(0x25), CS(0x26), 
-	LS(0x38), CS(0x38), CS(0x27), CS(0x30), CS(0x36), CS(0x37),
-	LS(0x31), CS(0x1f), LS(0x36), LS(0x37), CS(0x24), CS(0x2d)
+	CS(0x21), CS(0x22), CS(0x23), CS(0x30), CS(0x25), CS(0x26), 
+	LS(0x38), CS(0x38), CS(0x27), LS(0x30), CS(0x36), CS(0x37),
+	CS(0x31), CS(0x1f), LS(0x36), LS(0x37), CS(0x24), CS(0x2d)
 };
 
 const char signConversionTableASCII[] = {
