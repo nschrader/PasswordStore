@@ -43,7 +43,7 @@ void writeDisplayRegister(uint8_t x) {
 }
 
 // This way 0 will never occur
-uint8_t menuPage = 4;
+uint8_t menuPage = LANG_DE;
 uint8_t displayRegisterIndex[] = {
 	_0, _0, _0, _0
 };

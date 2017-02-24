@@ -38,6 +38,10 @@
 #define DIG_OUTPUT() { DDRD |= 0x53; DDRB = 0xff; }
 #define DIG_OFF() PORTD |= 0x53
 
+typedef enum {
+	LANG_EN = 2, LANG_DE = 4, LANG_FR = 6
+} language_t;
+
 extern const __flash uint8_t displayRegister[];
 extern uint8_t menuPage;
 extern uint8_t displayRegisterIndex[4];

@@ -40,10 +40,6 @@
 #define SHIFT_MODIFIER 0x20
 #define NO_MODIFIER 0x00
 
-typedef enum {
-	LANG_EN = 2, LANG_DE = 4, LANG_FR = 6
-} language_t;
-
 static const __flash uint8_t *letterConversionTable;
 
 static uint8_t correctLetter(passwordSeed *s) {

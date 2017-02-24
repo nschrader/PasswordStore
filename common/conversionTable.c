@@ -35,12 +35,12 @@
  * DE	A	M	Q	W	Z	Y
  * 
  * Conversion table for signs:
- * Sign			$	%	&	*	(	)	-	_	=	+	;	:	'	"	.	,	/	?
- * EN									-		=		;		'		.	,	/
+ * Sign			$	%	&	*	(	)	-	_	=	+	;	:	'	"	,	.	/	?
+ * EN									-		=		;		'		,	.	/
  * EN Shift		4	5	7	8	9	0		-		=		;		'				/
- * FR			]		1	\	5	-	6	8	=		,	.	4	3		M
- * FR Shift			'								=					,		.	M
- * DE									/						\		.	,	
+ * FR			]		1	\	5	-	6	8	=		,	.	4	3	M	
+ * FR Shift			'								=						,	.	M
+ * DE									/						\		,	.	
  * DE Shift		4	5	6	[	8	9		/	0	]	,	.		2			7	-
  */
 
@@ -53,7 +53,7 @@ const __flash uint8_t signConversionTableEN[] = {
 const __flash uint8_t signConversionTableFR[] = {
 	LS(0x30), CS(0x34), LS(0x1e), LS(0x31), LS(0x22), LS(0x2d), 
 	LS(0x23), LS(0x25), LS(0x2e), CS(0x2e), LS(0x36), LS(0x37),
-	LS(0x21), LS(0x20), CS(0x37), LS(0x10), CS(0x36), CS(0x10)
+	LS(0x21), LS(0x20), LS(0x10), CS(0x36), CS(0x37), CS(0x10)
 };
 
 const __flash uint8_t signConversionTableDE[] = {
