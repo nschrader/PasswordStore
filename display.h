@@ -30,10 +30,10 @@
 #define DIG1_ON() digitalWriteOff(D, 6)
 #define DIG2_OFF() digitalWriteOn(D, 0)
 #define DIG2_ON() digitalWriteOff(D, 0)
-#define DIG3_OFF() digitalWriteOn(D, 4)
-#define DIG3_ON() digitalWriteOff(D, 4)
-#define DIG4_OFF() digitalWriteOn(D, 1)
-#define DIG4_ON() digitalWriteOff(D, 1)
+#define DIG3_OFF() digitalWriteOn(D, 1)
+#define DIG3_ON() digitalWriteOff(D, 1)
+#define DIG4_OFF() digitalWriteOn(D, 4)
+#define DIG4_ON() digitalWriteOff(D, 4)
 
 #define DIG_OUTPUT() { DDRD |= 0x53; DDRB = 0xff; }
 #define DIG_OFF() PORTD |= 0x53
